@@ -35,6 +35,7 @@ fun HomeScreen(hub: RemoteHub, onNeedSetup: () -> Unit, onPickApp: () -> Unit) {
     val session by hub.connection.session.collectAsStateWithLifecycle()
     val linked by hub.linkMonitor.connected.collectAsStateWithLifecycle()
     val notice by hub.notice.collectAsStateWithLifecycle()
+    val signal by hub.signal.collectAsStateWithLifecycle()
 
     val app = settings.activeApp
     val watchName = settings.preferredWatchName
@@ -90,6 +91,17 @@ fun HomeScreen(hub: RemoteHub, onNeedSetup: () -> Unit, onPickApp: () -> Unit) {
             onTest = { hub.onInput(it, RemoteHub.SOURCE_TEST) },
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
         )
+
+        if (running) {
+            Text(
+                signal?.let { "Last signal from watch: $it" }
+                    ?: "No signal from the watch yet. Open Music on the watch and press next.",
+                color = if (signal != null) Cmf.Green else Cmf.Amber,
+                fontSize = 12.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
 
         val e = event
         if (e != null) {

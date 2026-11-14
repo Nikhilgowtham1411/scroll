@@ -75,6 +75,16 @@ class RemoteHub(private val app: Application, private val store: SettingsStore) 
     private val _notice = MutableStateFlow<String?>(null)
     val notice: StateFlow<String?> = _notice.asStateFlow()
 
+    private val _signal = MutableStateFlow<String?>(null)
+
+    /** Raw description of the last thing the watch (via the phone's media session) sent, for diagnosis. */
+    val signal: StateFlow<String?> = _signal.asStateFlow()
+
+    fun onSignal(text: String) {
+        val t = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+        _signal.value = "$text · $t"
+    }
+
     private var scanJob: Job? = null
     private var eventId = 0L
     private var media: MediaButtonSource? = null

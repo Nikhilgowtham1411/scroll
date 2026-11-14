@@ -29,7 +29,9 @@ import dev.nikhil.cmfsocialremote.model.WatchInput
 class MediaButtonSource(
     private val context: Context,
     private val onInput: (WatchInput, String) -> Unit,
+    private val onSignal: (String) -> Unit = {},
 ) {
+    private var keepAlive: android.media.AudioTrack? = null
     private var session: MediaSession? = null
     private var title = ""
     private var subtitle = ""
@@ -41,6 +43,7 @@ class MediaButtonSource(
             override fun onMediaButtonEvent(mediaButtonIntent: Intent): Boolean {
                 val event = mediaButtonIntent.keyEvent() ?: return true
                 if (event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0) {
+                    onSignal("key " + KeyEvent.keyCodeToString(event.keyCode).removePrefix("KEYCODE_"))
                     when (event.keyCode) {
                         KeyEvent.KEYCODE_MEDIA_NEXT -> emit(WatchInput.Up)
                         KeyEvent.KEYCODE_MEDIA_PREVIOUS -> emit(WatchInput.Down)
@@ -53,15 +56,50 @@ class MediaButtonSource(
                 return true
             }
 
-            override fun onSkipToNext() = emit(WatchInput.Up)
-            override fun onSkipToPrevious() = emit(WatchInput.Down)
-            override fun onPlay() = emit(WatchInput.Press)
-            override fun onPause() = emit(WatchInput.Press)
+            override fun onSkipToNext() { onSignal("skip next"); emit(WatchInput.Up) }
+            override fun onSkipToPrevious() { onSignal("skip previous"); emit(WatchInput.Down) }
+            override fun onPlay() { onSignal("play"); emit(WatchInput.Press) }
+            override fun onPause() { onSignal("pause"); emit(WatchInput.Press) }
         })
         session = s
         setLabel(app, surface)
         publishState(playing = true)
         s.isActive = true
+        startKeepAlive()
+    }
+
+    /**
+     * Android prefers sessions that are really playing audio when it picks who gets media keys.
+     * A looping silent track (no audio focus requested, so other apps are unaffected) keeps ours eligible.
+     */
+    private fun startKeepAlive() {
+        if (keepAlive != null) return
+        try {
+            val frames = 4410
+            val track = android.media.AudioTrack.Builder()
+                .setAudioAttributes(
+                    android.media.AudioAttributes.Builder()
+                        .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .build(),
+                )
+                .setAudioFormat(
+                    android.media.AudioFormat.Builder()
+                        .setEncoding(android.media.AudioFormat.ENCODING_PCM_16BIT)
+                        .setSampleRate(44100)
+                        .setChannelMask(android.media.AudioFormat.CHANNEL_OUT_MONO)
+                        .build(),
+                )
+                .setTransferMode(android.media.AudioTrack.MODE_STATIC)
+                .setBufferSizeInBytes(frames * 2)
+                .build()
+            track.write(ByteArray(frames * 2), 0, frames * 2)
+            track.setLoopPoints(0, frames, -1)
+            track.play()
+            keepAlive = track
+        } catch (_: Exception) {
+            keepAlive = null
+        }
     }
 
     /** Text the watch's Music screen may show as the "track". */
@@ -86,6 +124,8 @@ class MediaButtonSource(
     }
 
     fun release() {
+        keepAlive?.let { runCatching { it.stop(); it.release() } }
+        keepAlive = null
         session?.run {
             isActive = false
             release()

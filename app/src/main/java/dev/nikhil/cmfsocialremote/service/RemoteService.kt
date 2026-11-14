@@ -39,7 +39,7 @@ class RemoteService : Service() {
         }
 
         val settings = hub.settings.value
-        source = MediaButtonSource(this) { input, src -> hub.onInput(input, src) }.also {
+        source = MediaButtonSource(this, { input, src -> hub.onInput(input, src) }, { hub.onSignal(it) }).also {
             it.start(settings.activeApp, settings.configFor(settings.activeApp).surface)
             hub.attachMedia(it)
         }
