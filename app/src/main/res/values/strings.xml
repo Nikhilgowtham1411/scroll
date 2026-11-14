@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">CMF Social Remote</string>
+    <string name="accessibility_label">CMF Social Remote</string>
+    <string name="accessibility_description">Lets CMF Social Remote scroll and tap the Like button in Instagram, YouTube, Facebook and TikTok when you use your watch. It only works in those four apps, only reacts to commands from your watch, and never reads passwords, messages or logs in for you. Nothing leaves your phone.</string>
+    <string name="notif_channel_name">Watch remote</string>
+    <string name="notif_title">Watch remote is active</string>
+    <string name="notif_text">Listening for commands from your watch</string>
+    <string name="notif_stop">Stop</string>
+</resources>
