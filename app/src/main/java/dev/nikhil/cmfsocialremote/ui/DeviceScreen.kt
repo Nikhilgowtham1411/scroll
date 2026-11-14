@@ -52,6 +52,8 @@ fun DeviceScreen(hub: RemoteHub) {
     ) {
         Wordmark()
 
+        WatchSetupCard()
+
         // Connection status
         GlowCard(Modifier.fillMaxWidth(), highlight = session.state is ConnectionState.Connected) {
             val (label, color) = when (val st = session.state) {
